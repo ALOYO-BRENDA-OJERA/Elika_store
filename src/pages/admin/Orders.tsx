@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search, Eye, MoreHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Table,
   TableBody,
@@ -25,11 +26,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { formatPrice } from '@/data/products';
 import { toast } from 'sonner';
 
 interface Order {
-  id: string;
+  id: number;
+  orderNumber: string;
   customer: string;
   email: string;
   phone: string;
@@ -41,80 +51,34 @@ interface Order {
   date: string;
 }
 
-const initialOrders: Order[] = [
-  {
-    id: 'ORD-001',
-    customer: 'Sarah Mukasa',
-    email: 'sarah@example.com',
-    phone: '0772 123 456',
-    items: 3,
-    total: 450000,
-    status: 'delivered',
-    paymentMethod: 'MTN MoMo',
-    paymentStatus: 'completed',
-    date: '2024-03-15',
-  },
-  {
-    id: 'ORD-002',
-    customer: 'John Kato',
-    email: 'john@example.com',
-    phone: '0752 234 567',
-    items: 2,
-    total: 289000,
-    status: 'shipped',
-    paymentMethod: 'MTN MoMo',
-    paymentStatus: 'completed',
-    date: '2024-03-15',
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Grace Nalwoga',
-    email: 'grace@example.com',
-    phone: '0702 345 678',
-    items: 1,
-    total: 175000,
-    status: 'processing',
-    paymentMethod: 'Airtel Money',
-    paymentStatus: 'completed',
-    date: '2024-03-14',
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Peter Ssemakula',
-    email: 'peter@example.com',
-    phone: '0782 456 789',
-    items: 4,
-    total: 520000,
-    status: 'pending',
-    paymentMethod: 'MTN MoMo',
-    paymentStatus: 'pending',
-    date: '2024-03-14',
-  },
-  {
-    id: 'ORD-005',
-    customer: 'Mary Nambi',
-    email: 'mary@example.com',
-    phone: '0712 567 890',
-    items: 1,
-    total: 95000,
-    status: 'delivered',
-    paymentMethod: 'Airtel Money',
-    paymentStatus: 'completed',
-    date: '2024-03-13',
-  },
-  {
-    id: 'ORD-006',
-    customer: 'James Okello',
-    email: 'james@example.com',
-    phone: '0772 678 901',
-    items: 2,
-    total: 340000,
-    status: 'cancelled',
-    paymentMethod: 'MTN MoMo',
-    paymentStatus: 'failed',
-    date: '2024-03-12',
-  },
-];
+type OrderDetails = {
+  id: number;
+  orderNumber: string;
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+    street: string;
+    city: string;
+    region?: string | null;
+  };
+  status: Order['status'];
+  paymentMethod: string;
+  paymentStatus: Order['paymentStatus'];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  createdAt: string;
+  items: Array<{
+    id: number;
+    productId: number;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+  }>;
+};
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -131,33 +95,173 @@ const paymentStatusColors: Record<string, string> = {
 };
 
 export default function AdminOrders() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+  const openDetails = (orderId: number) => {
+    setSelectedOrderId(orderId);
+    setDetailsOpen(true);
+  };
+
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ['admin-orders'],
+    queryFn: async () => {
+      const response = await fetch('/api/orders', { credentials: 'include' });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || `Failed to fetch orders (${response.status})`);
+      }
+      return (await response.json()) as Order[];
+    },
   });
 
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-    toast.success(`Order ${orderId} status updated to ${newStatus}`);
+  const { data: orderDetails, isLoading: isDetailsLoading } = useQuery({
+    queryKey: ['admin-order', selectedOrderId],
+    enabled: detailsOpen && !!selectedOrderId,
+    queryFn: async () => {
+      const response = await fetch(`/api/orders/${selectedOrderId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || `Failed to fetch order (${response.status})`);
+      }
+      return (await response.json()) as OrderDetails;
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: number; status: Order['status'] }) => {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || `Failed to update status (${response.status})`);
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      if (selectedOrderId) {
+        await queryClient.invalidateQueries({ queryKey: ['admin-order', selectedOrderId] });
+      }
+    },
+  });
+
+  const filteredOrders = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchesSearch =
+        !q ||
+        order.orderNumber.toLowerCase().includes(q) ||
+        order.customer.toLowerCase().includes(q) ||
+        order.email.toLowerCase().includes(q);
+
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchQuery, statusFilter]);
+
+  const updateOrderStatus = async (order: Order, newStatus: Order['status']) => {
+    try {
+      await updateStatus.mutateAsync({ orderId: order.id, status: newStatus });
+      toast.success(`Order ${order.orderNumber} status updated to ${newStatus}`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to update order status');
+    }
   };
 
   return (
     <AdminLayout title="Orders">
       <div className="space-y-6">
+        <Dialog
+          open={detailsOpen}
+          onOpenChange={(open) => {
+            setDetailsOpen(open);
+            if (!open) setSelectedOrderId(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Order {orderDetails?.orderNumber ? orderDetails.orderNumber : 'Details'}
+              </DialogTitle>
+              <DialogDescription>
+                Customer, payment, and status information.
+              </DialogDescription>
+            </DialogHeader>
+
+            {isDetailsLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : orderDetails ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Customer</p>
+                    <p className="font-medium">{orderDetails.customer.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date</p>
+                    <p className="font-medium">
+                      {String(orderDetails.createdAt).slice(0, 10)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-medium">{orderDetails.customer.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium">{orderDetails.customer.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Items</p>
+                    <p className="font-medium">{orderDetails.items.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="font-medium">{formatPrice(orderDetails.total)}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Order Status</p>
+                    <Badge className={`${statusColors[orderDetails.status]} border-0 capitalize mt-1`}>
+                      {orderDetails.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment</p>
+                    <div className="mt-1">
+                      <p className="text-sm">{orderDetails.paymentMethod}</p>
+                      <Badge
+                        className={`${paymentStatusColors[orderDetails.paymentStatus]} border-0 text-xs mt-1 capitalize`}
+                      >
+                        {orderDetails.paymentStatus}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No order selected.</p>
+            )}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDetailsOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1 max-w-md">
@@ -200,9 +304,22 @@ export default function AdminOrders() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrders.map((order) => (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                    Loading orders…
+                  </TableCell>
+                </TableRow>
+              ) : filteredOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                    No orders yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+                  <TableCell className="font-medium">{order.orderNumber}</TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium">{order.customer}</p>
@@ -229,7 +346,7 @@ export default function AdminOrders() {
                     <Select
                       value={order.status}
                       onValueChange={(value) =>
-                        updateOrderStatus(order.id, value as Order['status'])
+                        updateOrderStatus(order, value as Order['status'])
                       }
                     >
                       <SelectTrigger className="w-[130px] h-8">
@@ -259,7 +376,12 @@ export default function AdminOrders() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            openDetails(order.id);
+                          }}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
@@ -267,7 +389,8 @@ export default function AdminOrders() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
           </Table>
         </div>

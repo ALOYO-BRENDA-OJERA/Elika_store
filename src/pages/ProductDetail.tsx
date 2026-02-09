@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
   Heart,
@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const { addItem } = useCart();
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [reviewName, setReviewName] = useState('');
@@ -308,10 +309,13 @@ export default function ProductDetail() {
                 size="lg"
                 className="flex-1 btn-primary gap-2"
                 disabled={!product.inStock}
-                onClick={() => addItem(product, quantity)}
+                onClick={() => {
+                  addItem(product, quantity);
+                  navigate('/cart');
+                }}
               >
                 <ShoppingBag className="h-5 w-5" />
-                Add to Cart
+                Place Order
               </Button>
               <Button variant="outline" size="lg">
                 <Heart className="h-5 w-5" />

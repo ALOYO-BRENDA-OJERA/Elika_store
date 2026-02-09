@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -10,18 +10,40 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 export default function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const params = new URLSearchParams(location.search);
+  const returnTo = params.get('return') || '/orders';
+  const fromCheckout = returnTo === '/checkout';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate login
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast.success('Login successful!');
-    setIsLoading(false);
+
+    try {
+      const response = await fetch('/api/customer/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error || `Login failed (${response.status})`);
+      }
+
+      toast.success('Login successful!');
+      navigate(returnTo, { replace: true });
+    } catch (err: any) {
+      toast.error(err?.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -33,6 +55,11 @@ export default function Login() {
             <p className="text-muted-foreground">
               Sign in to your account to continue shopping
             </p>
+            {fromCheckout ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                You need to sign in before placing an order.
+              </p>
+            ) : null}
           </div>
 
           <div className="bg-card rounded-xl p-8 shadow-sm">
@@ -46,6 +73,8 @@ export default function Login() {
                     type="email"
                     placeholder="Enter your email"
                     className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
@@ -55,7 +84,7 @@ export default function Login() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
                   <Link
-                    to="/forgot-password"
+                    to={`/forgot-password?return=${encodeURIComponent(returnTo)}`}
                     className="text-sm text-primary hover:underline"
                   >
                     Forgot password?
@@ -68,6 +97,8 @@ export default function Login() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     className="pl-10 pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                   <button
@@ -100,6 +131,15 @@ export default function Login() {
                 {isLoading ? 'Signing in...' : 'Sign In'}
                 <ArrowRight className="h-4 w-4" />
               </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link
+                  to={`/signup?return=${encodeURIComponent(returnTo)}`}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Create account
+                </Link>
+              </p>
             </form>
 
             <div className="relative my-6">
@@ -109,20 +149,12 @@ export default function Login() {
               </span>
             </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link to="/signup" className="text-primary font-medium hover:underline">
-                Sign up
-              </Link>
-            </p>
           </div>
 
           {/* Admin Access Note */}
           <p className="text-center text-sm text-muted-foreground mt-6">
             Admin?{' '}
-            <Link to="/admin" className="text-primary font-medium hover:underline">
-              Access Admin Dashboard
-            </Link>
+            
           </p>
         </div>
       </div>

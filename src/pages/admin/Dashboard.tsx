@@ -14,12 +14,17 @@ import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboard() {
+  const adminBase = (import.meta.env.VITE_ADMIN_PATH as string | undefined) || 'admin';
+
   // Fetch dashboard stats
   const { data: statsData, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const response = await fetch('/api/stats');
-      if (!response.ok) throw new Error('Failed to fetch stats');
+      const response = await fetch('/api/stats', { credentials: 'include' });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || `Failed to fetch stats (${response.status})`);
+      }
       return response.json();
     },
   });
@@ -29,6 +34,7 @@ export default function AdminDashboard() {
   const totalValue = statsData?.totalValue || 0;
   const topProducts = statsData?.topProducts || [];
   const recentOrders = statsData?.recentOrders || [];
+  const recentContacts = statsData?.recentContacts || [];
 
   const stats = [
     {
@@ -83,7 +89,7 @@ export default function AdminDashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="font-display text-lg">Top Products</CardTitle>
               <Button variant="ghost" size="sm" className="gap-1" asChild>
-                <Link to="/admin/products">
+                <Link to={`/${adminBase}/products`}>
                   View All <ArrowUpRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -127,25 +133,66 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full justify-start gap-2" variant="outline" asChild>
-                <Link to="/admin/products">
-                  <Package className="h-4 w-4" />
-                  Manage Products
-                </Link>
-              </Button>
-              <Button className="w-full justify-start gap-2" variant="outline" asChild>
-                <Link to="/admin/categories">
-                  <FolderOpen className="h-4 w-4" />
-                  Manage Categories
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-display text-lg">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button className="w-full justify-start gap-2" variant="outline" asChild>
+                  <Link to={`/${adminBase}/products`}>
+                    <Package className="h-4 w-4" />
+                    Manage Products
+                  </Link>
+                </Button>
+                <Button className="w-full justify-start gap-2" variant="outline" asChild>
+                  <Link to={`/${adminBase}/categories`}>
+                    <FolderOpen className="h-4 w-4" />
+                    Manage Categories
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-display text-lg">Get In Touch</CardTitle>
+                <Button variant="ghost" size="sm" className="gap-1" asChild>
+                  <Link to={`/${adminBase}/messages`}>View All</Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 flex-1" />
+                      </div>
+                    ))}
+                  </div>
+                ) : recentContacts.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No messages yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentContacts.map((msg) => (
+                      <div key={msg.id} className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{msg.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {msg.subject || 'No subject'}
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {String(msg.date).slice(0, 10)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </AdminLayout>

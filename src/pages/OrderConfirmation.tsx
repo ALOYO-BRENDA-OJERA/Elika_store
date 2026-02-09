@@ -1,9 +1,16 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle, Package, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 
 export default function OrderConfirmation() {
+  const location = useLocation();
+  const state = (location.state || {}) as {
+    orderNumber?: string | null;
+  };
+
+  const orderNumber = state.orderNumber || null;
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-16">
@@ -21,6 +28,18 @@ export default function OrderConfirmation() {
             processed. You will receive a confirmation SMS with your order details
             shortly.
           </p>
+
+          {orderNumber ? (
+            <div className="bg-card rounded-xl p-4 shadow-sm mb-8 text-left">
+              <p className="text-sm text-muted-foreground">Order Number</p>
+              <p className="font-semibold text-lg">{orderNumber}</p>
+              <div className="mt-3">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/orders">Track this order</Link>
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="bg-card rounded-xl p-6 shadow-sm mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -60,6 +79,9 @@ export default function OrderConfirmation() {
                 Continue Shopping
                 <ArrowRight className="h-5 w-5" />
               </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link to="/orders">My Orders</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link to="/">Back to Home</Link>

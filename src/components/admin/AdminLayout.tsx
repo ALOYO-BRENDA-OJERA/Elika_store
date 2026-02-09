@@ -9,6 +9,7 @@ import {
   Menu,
   Bell,
   Search,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +17,14 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
+const ADMIN_BASE = (import.meta.env.VITE_ADMIN_PATH as string | undefined) || 'admin';
+
 const sidebarLinks = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Products', href: '/admin/products', icon: Package },
-  { name: 'Categories', href: '/admin/categories', icon: BarChart3 },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+  { name: 'Dashboard', href: `/${ADMIN_BASE}`, icon: LayoutDashboard },
+  { name: 'Products', href: `/${ADMIN_BASE}/products`, icon: Package },
+  { name: 'Categories', href: `/${ADMIN_BASE}/categories`, icon: BarChart3 },
+  { name: 'Orders', href: `/${ADMIN_BASE}/orders`, icon: ShoppingCart },
+  { name: 'Complaints', href: `/${ADMIN_BASE}/messages`, icon: MessageSquare },
 ];
 
 interface AdminLayoutProps {
@@ -35,7 +39,7 @@ function Sidebar({ className }: { className?: string }) {
     <div className={`flex flex-col h-full bg-card border-r border-border ${className}`}>
       {/* Logo */}
       <div className="p-6 border-b border-border">
-        <Link to="/admin" className="flex items-center gap-2">
+        <Link to={`/${ADMIN_BASE}`} className="flex items-center gap-2">
           <span className="font-display text-2xl font-bold text-foreground">
             Elika
           </span>

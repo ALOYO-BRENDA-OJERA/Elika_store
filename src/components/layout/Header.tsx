@@ -6,20 +6,52 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Shop', href: '/products' },
-  { name: 'About', href: '/about' },
+  { name: 'Orders', href: '/orders' },
   { name: 'Contact', href: '/contact' },
-  { name: 'Admin', href: '/admin' },
 ];
 
 export function Header() {
+  const queryClient = useQueryClient();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { itemCount, toggleCart } = useCart();
   const navigate = useNavigate();
+
+  const { data: meData } = useQuery({
+    queryKey: ['customer-me'],
+    queryFn: async () => {
+      const response = await fetch('/api/customer/me', { credentials: 'include' });
+      if (!response.ok) return null;
+      return (await response.json()) as { user: { id: string; name: string; email: string } };
+    },
+    retry: false,
+  });
+
+  const isLoggedIn = Boolean(meData?.user);
+  const displayName = meData?.user?.name || 'Account';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+
+  const handleLogout = async () => {
+    await fetch('/api/customer/logout', { method: 'POST', credentials: 'include' });
+    await queryClient.invalidateQueries({ queryKey: ['customer-me'] });
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +91,42 @@ export function Header() {
                   </Link>
                 ))}
                 <div className="border-t border-border pt-4 mt-4">
-                  <Link
-                    to="/login"
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                  >
-                    Sign In
-                  </Link>
+                  {isLoggedIn ? (
+                    <>
+                      <div className="rounded-lg border bg-card px-3 py-2 text-sm">
+                        <p className="text-muted-foreground">Signed in as</p>
+                        <p className="font-medium text-foreground">{displayName}</p>
+                      </div>
+                      <Link
+                        to="/orders"
+                        className="mt-3 text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        My Orders
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="mt-2 block text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/login"
+                        className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        to="/signup"
+                        className="mt-2 block text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        Sign Up
+                      </Link>
+                    </>
+                  )}
                 </div>
               </nav>
             </SheetContent>
@@ -131,12 +193,39 @@ export function Header() {
             </Button>
 
             {/* User */}
-            <Link to="/login">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-                <span className="sr-only">Account</span>
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="hidden md:flex items-center gap-3 rounded-full px-2 py-1">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                      {initials || 'ME'}
+                    </span>
+                    <span className="text-sm font-medium">{displayName}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders">My Orders</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>Sign Out</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/login">
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Account</span>
+                </Button>
+              </Link>
+            )}
+            {!isLoggedIn ? (
+              <Link to="/signup" className="hidden md:inline-flex">
+                <Button variant="outline" size="sm">
+                  Sign Up
+                </Button>
+              </Link>
+            ) : null}
 
             {/* Cart */}
             <Button

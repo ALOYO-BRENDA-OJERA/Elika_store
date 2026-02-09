@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, Phone, ShieldCheck, Lock, Truck, Banknote } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -20,6 +20,7 @@ export default function Checkout() {
   const [paymentTiming, setPaymentTiming] = useState<PaymentTiming>('pay_now');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mtn_momo');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -35,6 +36,25 @@ export default function Checkout() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  useEffect(() => {
+    let active = true;
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/customer/me', { credentials: 'include' });
+        if (!response.ok) {
+          navigate('/login?return=/checkout', { replace: true });
+          return;
+        }
+      } finally {
+        if (active) setIsAuthChecking(false);
+      }
+    };
+    checkAuth();
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -46,17 +66,72 @@ export default function Checkout() {
 
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          customer: {
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            street: formData.street,
+            city: formData.city,
+            region: formData.region,
+          },
+          paymentMethod,
+          paymentStatus: paymentTiming === 'pay_on_delivery' ? 'pending' : 'pending',
+          shipping,
+          tax,
+          items: items.map((it) => ({
+            productId: it.product.id,
+            quantity: it.quantity,
+          })),
+        }),
+      });
 
-    toast.success('Order placed successfully!', {
-      description: 'You will receive a payment prompt on your phone.',
-    });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || `Failed to place order (${response.status})`);
+      }
 
-    clearCart();
-    navigate('/order-confirmation');
-    setIsProcessing(false);
+      const created = (await response.json().catch(() => null)) as
+        | { orderNumber?: string; id?: number }
+        | null;
+
+      const orderNumber = created?.orderNumber;
+
+      toast.success('Order placed successfully!', {
+        description:
+          paymentTiming === 'pay_now'
+            ? 'You will receive a payment prompt on your phone.'
+            : 'Your order has been placed. Pay when your order arrives.',
+      });
+
+      clearCart();
+      navigate('/orders', {
+        state: {
+          orderNumber: orderNumber || null,
+          showNextSteps: true,
+        },
+      });
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to place order');
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  if (isAuthChecking) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <p className="text-muted-foreground">Checking your account…</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (items.length === 0) {
     return (

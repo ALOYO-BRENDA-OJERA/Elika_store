@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -10,18 +10,40 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 export default function Signup() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const params = new URLSearchParams(location.search);
+  const returnTo = params.get('return') || '/orders';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate signup
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast.success('Account created successfully!');
-    setIsLoading(false);
+
+    try {
+      const response = await fetch('/api/customer/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ fullName, email, password }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error || `Signup failed (${response.status})`);
+      }
+
+      toast.success('Account created successfully!');
+      navigate(returnTo, { replace: true });
+    } catch (err: any) {
+      toast.error(err?.message || 'Signup failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -46,6 +68,8 @@ export default function Signup() {
                     type="text"
                     placeholder="Enter your full name"
                     className="pl-10"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     required
                   />
                 </div>
@@ -60,6 +84,8 @@ export default function Signup() {
                     type="email"
                     placeholder="Enter your email"
                     className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
@@ -74,6 +100,8 @@ export default function Signup() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Create a password"
                     className="pl-10 pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                   <button
@@ -137,7 +165,10 @@ export default function Signup() {
 
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary font-medium hover:underline">
+              <Link
+                to={`/login?return=${encodeURIComponent(returnTo)}`}
+                className="text-primary font-medium hover:underline"
+              >
                 Sign in
               </Link>
             </p>

@@ -12,7 +12,6 @@ const footerLinks = {
     { name: 'Beauty', href: '/products?category=beauty' },
   ],
   company: [
-    { name: 'About Us', href: '/about' },
     { name: 'Careers', href: '/careers' },
     { name: 'Press', href: '/press' },
     { name: 'Blog', href: '/blog' },
