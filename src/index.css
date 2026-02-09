@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Elika E-Commerce Design System
+   A modern, premium aesthetic with blue & purple accents
+*/
+
+@layer base {
+  :root {
+    /* Core brand colors - Blue & Purple palette */
+    --background: 240 20% 98%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    /* Primary - Vibrant Blue */
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Soft Lavender */
+    --secondary: 260 30% 94%;
+    --secondary-foreground: 260 20% 20%;
+
+    /* Muted - Cool Gray */
+    --muted: 240 15% 92%;
+    --muted-foreground: 240 10% 45%;
+
+    /* Accent - Purple */
+    --accent: 270 70% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 15% 88%;
+    --input: 240 15% 88%;
+    --ring: 220 90% 56%;
+
+    --radius: 0.75rem;
+
+    /* Custom Elika tokens */
+    --gold: 220 90% 56%;
+    --gold-light: 220 80% 70%;
+    --gold-dark: 220 95% 45%;
+    --charcoal: 240 10% 10%;
+    --cream: 240 20% 98%;
+    --teal: 270 70% 55%;
+    --teal-light: 270 60% 65%;
+    --success: 142 70% 45%;
+    --warning: 38 92% 50%;
+
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(220 90% 56%) 0%, hsl(270 70% 55%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(240 20% 98%) 0%, hsl(260 30% 96%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(260 20% 98%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(240 10% 10% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(240 10% 10% / 0.08), 0 2px 4px -2px hsl(240 10% 10% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(240 10% 10% / 0.08), 0 4px 6px -4px hsl(240 10% 10% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(240 10% 10% / 0.1), 0 8px 10px -6px hsl(240 10% 10% / 0.05);
+    --shadow-gold: 0 4px 14px 0 hsl(220 90% 56% / 0.25);
+
+    --sidebar-background: 240 20% 98%;
+    --sidebar-foreground: 240 10% 25%;
+    --sidebar-primary: 220 90% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 260 30% 94%;
+    --sidebar-accent-foreground: 260 20% 20%;
+    --sidebar-border: 240 15% 88%;
+    --sidebar-ring: 220 90% 56%;
+  }
+
+  .dark {
+    --background: 240 15% 8%;
+    --foreground: 240 20% 95%;
+
+    --card: 240 15% 12%;
+    --card-foreground: 240 20% 95%;
+
+    --popover: 240 15% 10%;
+    --popover-foreground: 240 20% 95%;
+
+    --primary: 220 85% 60%;
+    --primary-foreground: 240 15% 8%;
+
+    --secondary: 260 15% 18%;
+    --secondary-foreground: 260 20% 90%;
+
+    --muted: 240 15% 20%;
+    --muted-foreground: 240 15% 60%;
+
+    --accent: 270 60% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 15% 20%;
+    --input: 240 15% 20%;
+    --ring: 220 85% 60%;
+
+    --gold: 220 85% 60%;
+    --gold-light: 220 75% 70%;
+    --gold-dark: 220 90% 50%;
+    --charcoal: 240 20% 95%;
+    --cream: 240 15% 8%;
+    --teal: 270 60% 60%;
+    --teal-light: 270 50% 70%;
+
+    --gradient-gold: linear-gradient(135deg, hsl(220 85% 60%) 0%, hsl(270 60% 60%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(240 15% 8%) 0%, hsl(240 15% 12%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(240 15% 12%) 0%, hsl(260 15% 15%) 100%);
+
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.2);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -4px hsl(0 0% 0% / 0.2);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(0 0% 0% / 0.3);
+    --shadow-gold: 0 4px 14px 0 hsl(220 85% 60% / 0.3);
+
+    --sidebar-background: 240 15% 10%;
+    --sidebar-foreground: 240 20% 90%;
+    --sidebar-primary: 220 85% 60%;
+    --sidebar-primary-foreground: 240 15% 8%;
+    --sidebar-accent: 260 15% 18%;
+    --sidebar-accent-foreground: 260 20% 90%;
+    --sidebar-border: 240 15% 20%;
+    --sidebar-ring: 220 85% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:opacity-90 transition-all duration-300;
+    box-shadow: var(--shadow-gold);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px 0 hsl(220 90% 56% / 0.35);
+    transform: translateY(-1px);
+  }
+
+  .card-hover {
+    @apply transition-all duration-300;
+    box-shadow: var(--shadow-md);
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px);
+  }
+
+  .gradient-text {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass {
+    backdrop-filter: blur(12px);
+    background: hsl(0 0% 100% / 0.8);
+  }
+
+  .dark .glass {
+    background: hsl(30 15% 10% / 0.8);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
