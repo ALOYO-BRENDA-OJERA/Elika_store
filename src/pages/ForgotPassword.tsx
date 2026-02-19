@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -69,7 +71,7 @@ export default function ForgotPassword() {
               {resetUrl ? (
                 <div className="mt-4 rounded-lg border p-3 text-sm">
                   <p className="text-muted-foreground">Dev link (no email yet):</p>
-                  <Link to={resetUrl} className="text-primary break-all">
+                    <Link href={resetUrl} className="text-primary break-all">
                     {resetUrl}
                   </Link>
                 </div>
@@ -77,7 +79,7 @@ export default function ForgotPassword() {
 
               <p className="text-sm text-muted-foreground mt-4">
                 Remembered your password?{' '}
-                <Link to="/login" className="text-primary hover:underline">
+                  <Link href="/login" className="text-primary hover:underline">
                   Sign in
                 </Link>
               </p>

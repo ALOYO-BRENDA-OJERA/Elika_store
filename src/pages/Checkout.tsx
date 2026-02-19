@@ -1,5 +1,8 @@
+"use client";
+
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronRight, Phone, ShieldCheck, Lock, Truck, Banknote } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -15,7 +18,7 @@ type PaymentMethod = 'mtn_momo' | 'airtel_money' | 'pay_on_delivery';
 type PaymentTiming = 'pay_now' | 'pay_on_delivery';
 
 export default function Checkout() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { items, subtotal, shipping, tax, total, clearCart } = useCart();
   const [paymentTiming, setPaymentTiming] = useState<PaymentTiming>('pay_now');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mtn_momo');
@@ -42,7 +45,7 @@ export default function Checkout() {
       try {
         const response = await fetch('/api/customer/me', { credentials: 'include' });
         if (!response.ok) {
-          navigate('/login?return=/checkout', { replace: true });
+          router.replace('/login?return=/checkout');
           return;
         }
       } finally {
@@ -53,7 +56,7 @@ export default function Checkout() {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,12 +113,10 @@ export default function Checkout() {
       });
 
       clearCart();
-      navigate('/orders', {
-        state: {
-          orderNumber: orderNumber || null,
-          showNextSteps: true,
-        },
-      });
+      const params = new URLSearchParams();
+      if (orderNumber) params.set('orderNumber', orderNumber);
+      params.set('nextSteps', '1');
+      router.push(`/orders?${params.toString()}`);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to place order');
     } finally {
@@ -144,7 +145,7 @@ export default function Checkout() {
             Add some items to your cart before checking out.
           </p>
           <Button asChild>
-            <Link to="/products">Browse Products</Link>
+            <Link href="/products">Browse Products</Link>
           </Button>
         </div>
       </Layout>
@@ -156,11 +157,11 @@ export default function Checkout() {
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-          <Link to="/" className="hover:text-foreground transition-colors">
+          <Link href="/" className="hover:text-foreground transition-colors">
             Home
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <Link to="/cart" className="hover:text-foreground transition-colors">
+          <Link href="/cart" className="hover:text-foreground transition-colors">
             Cart
           </Link>
           <ChevronRight className="h-4 w-4" />

@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useState } from 'react';
 import { Search, Eye, MoreHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -36,6 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatPrice } from '@/data/products';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface Order {
   id: number;
@@ -177,6 +180,28 @@ export default function AdminOrders() {
     }
   };
 
+  const exportToExcel = () => {
+    const rows = filteredOrders.map((order) => ({
+      'Order Number': order.orderNumber,
+      Customer: order.customer,
+      Email: order.email,
+      Phone: order.phone,
+      Items: order.items,
+      Total: order.total,
+      Status: order.status,
+      'Payment Method': order.paymentMethod,
+      'Payment Status': order.paymentStatus,
+      Date: order.date,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+
+    const fileName = `orders-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   return (
     <AdminLayout title="Orders">
       <div className="space-y-6">
@@ -286,6 +311,15 @@ export default function AdminOrders() {
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={exportToExcel}
+            disabled={filteredOrders.length === 0}
+            className="sm:ml-auto"
+          >
+            Export to Excel
+          </Button>
         </div>
 
         {/* Orders Table */}

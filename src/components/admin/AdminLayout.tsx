@@ -1,5 +1,8 @@
+"use client";
+
 import { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Package,
@@ -17,7 +20,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
-const ADMIN_BASE = (import.meta.env.VITE_ADMIN_PATH as string | undefined) || 'admin';
+const ADMIN_BASE = process.env.NEXT_PUBLIC_ADMIN_PATH || 'admin';
 
 const sidebarLinks = [
   { name: 'Dashboard', href: `/${ADMIN_BASE}`, icon: LayoutDashboard },
@@ -33,13 +36,13 @@ interface AdminLayoutProps {
 }
 
 function Sidebar({ className }: { className?: string }) {
-  const location = useLocation();
+  const pathname = usePathname();
 
   return (
     <div className={`flex flex-col h-full bg-card border-r border-border ${className}`}>
       {/* Logo */}
       <div className="p-6 border-b border-border">
-        <Link to={`/${ADMIN_BASE}`} className="flex items-center gap-2">
+        <Link href={`/${ADMIN_BASE}`} className="flex items-center gap-2">
           <span className="font-display text-2xl font-bold text-foreground">
             Elika
           </span>
@@ -50,11 +53,11 @@ function Sidebar({ className }: { className?: string }) {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {sidebarLinks.map((link) => {
-          const isActive = location.pathname === link.href;
+          const isActive = pathname === link.href;
           return (
             <Link
               key={link.name}
-              to={link.href}
+              href={link.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-primary text-primary-foreground'
@@ -71,7 +74,7 @@ function Sidebar({ className }: { className?: string }) {
       {/* Footer */}
       <div className="p-4 border-t border-border">
         <Link
-          to="/"
+          href="/"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
         >
           <LogOut className="h-5 w-5" />

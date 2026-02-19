@@ -1,0 +1,11 @@
+{
+  "/api/customer/me/route": "app/api/customer/me/route.js",
+  "/api/orders/route": "app/api/orders/route.js",
+  "/api/me/orders/route": "app/api/me/orders/route.js",
+  "/admin-1deec6581595/page": "app/admin-1deec6581595/page.js",
+  "/admin/categories/page": "app/admin/categories/page.js",
+  "/admin/products/page": "app/admin/products/page.js",
+  "/products/[id]/page": "app/products/[id]/page.js",
+  "/checkout/page": "app/checkout/page.js",
+  "/orders/page": "app/orders/page.js"
+}

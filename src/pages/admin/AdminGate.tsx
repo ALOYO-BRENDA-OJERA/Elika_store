@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +18,7 @@ export function AdminGate({
   adminBase: string;
 }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,19 +29,27 @@ export function AdminGate({
     queryKey: ['admin-me'],
     queryFn: async () => {
       const response = await fetch('/api/auth/me', { credentials: 'include' });
-      if (!response.ok) throw new Error(`Auth check failed (${response.status})`);
-      return (await response.json()) as MeResponse;
+      if (!response.ok) {
+        console.log('AdminGate: /api/auth/me failed', response.status);
+        throw new Error(`Auth check failed (${response.status})`);
+      }
+      const json = (await response.json()) as MeResponse;
+      console.log('AdminGate: /api/auth/me success', json);
+      return json;
     },
     retry: false,
   });
 
   const isAdmin = data?.user?.role === 'admin';
+  console.log('AdminGate: isLoading', isLoading, 'isAdmin', isAdmin, 'data', data);
 
   if (isLoading) {
+    console.log('AdminGate: loading...');
     return null;
   }
 
   if (isAdmin) {
+    console.log('AdminGate: Authenticated as admin, rendering children');
     return <>{children}</>;
   }
 
@@ -46,6 +58,7 @@ export function AdminGate({
     setError(null);
     setIsSubmitting(true);
     try {
+      console.log('AdminGate: Submitting login', { username });
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,14 +72,16 @@ export function AdminGate({
           response.status === 401
             ? 'Invalid credentials (check ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD in server/.env and ensure you ran npm run seed:admin)'
             : null;
+        console.log('AdminGate: Login failed', { status: response.status, serverMessage, hint });
         throw new Error(
           serverMessage || hint || `Login failed (${response.status})`
         );
       }
       await queryClient.invalidateQueries({ queryKey: ['admin-me'] });
-      // Keep the URL "hidden" by staying on the same secret admin base path.
-      window.history.replaceState(null, '', `/${adminBase}`);
+      console.log('AdminGate: Login successful, invalidated admin-me, redirecting with router.replace');
+      router.replace(`/${adminBase}`);
     } catch (err: any) {
+      console.log('AdminGate: Login error', err);
       setError(err?.message || 'Login failed (unknown error)');
     } finally {
       setIsSubmitting(false);

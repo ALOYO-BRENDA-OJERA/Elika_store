@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+"use client";
+
+import Link from 'next/link';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { Product } from '@/types';
 import { formatPrice } from '@/data/products';
@@ -19,7 +21,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="group relative bg-card rounded-xl overflow-hidden card-hover">
       {/* Image container */}
-      <Link to={`/products/${product.id}`} className="block aspect-square overflow-hidden bg-muted">
+      <Link href={`/products/${product.id}`} className="block aspect-square overflow-hidden bg-muted">
         <img
           src={product.images[0]}
           alt={product.name}
@@ -68,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Product info */}
       <div className="p-4">
-        <Link to={`/products/${product.id}`}>
+        <Link href={`/products/${product.id}`}>
           <p className="text-xs text-muted-foreground mb-1">{product.category}</p>
           <h3 className="font-medium text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
             {product.name}

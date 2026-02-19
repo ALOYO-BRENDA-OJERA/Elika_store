@@ -1,5 +1,8 @@
+"use client";
+
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -10,14 +13,13 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 export default function Login() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const params = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const params = new URLSearchParams(location.search);
   const returnTo = params.get('return') || '/orders';
   const fromCheckout = returnTo === '/checkout';
 
@@ -38,7 +40,7 @@ export default function Login() {
       }
 
       toast.success('Login successful!');
-      navigate(returnTo, { replace: true });
+      router.replace(returnTo);
     } catch (err: any) {
       toast.error(err?.message || 'Login failed');
     } finally {
@@ -84,7 +86,7 @@ export default function Login() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
                   <Link
-                    to={`/forgot-password?return=${encodeURIComponent(returnTo)}`}
+                    href={`/forgot-password?return=${encodeURIComponent(returnTo)}`}
                     className="text-sm text-primary hover:underline"
                   >
                     Forgot password?
@@ -134,7 +136,7 @@ export default function Login() {
               <p className="text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <Link
-                  to={`/signup?return=${encodeURIComponent(returnTo)}`}
+                  href={`/signup?return=${encodeURIComponent(returnTo)}`}
                   className="text-primary font-medium hover:underline"
                 >
                   Create account

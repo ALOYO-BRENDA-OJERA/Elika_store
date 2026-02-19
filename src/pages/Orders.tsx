@@ -1,5 +1,8 @@
+"use client";
+
 import { useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,13 +81,9 @@ const paymentStatusColors: Record<string, string> = {
 };
 
 export default function Orders() {
-  const location = useLocation();
-  const state = (location.state || {}) as {
-    orderNumber?: string | null;
-    showNextSteps?: boolean;
-  };
-  const nextStepsOrder = state.orderNumber || null;
-  const showNextSteps = Boolean(state.showNextSteps);
+  const params = useSearchParams();
+  const nextStepsOrder = params.get('orderNumber');
+  const showNextSteps = params.get('nextSteps') === '1';
   const [orderNumber, setOrderNumber] = useState('');
 
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -185,7 +184,7 @@ export default function Orders() {
                     Please sign in to view your orders.
                   </p>
                   <Button asChild className="btn-primary">
-                    <Link to="/login?return=/orders">Sign in</Link>
+                    <Link href="/login?return=/orders">Sign in</Link>
                   </Button>
                 </div>
               ) : (

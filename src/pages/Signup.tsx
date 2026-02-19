@@ -1,5 +1,8 @@
+"use client";
+
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -10,15 +13,14 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 export default function Signup() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const params = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const params = new URLSearchParams(location.search);
   const returnTo = params.get('return') || '/orders';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +40,7 @@ export default function Signup() {
       }
 
       toast.success('Account created successfully!');
-      navigate(returnTo, { replace: true });
+      router.replace(returnTo);
     } catch (err: any) {
       toast.error(err?.message || 'Signup failed');
     } finally {
@@ -135,11 +137,11 @@ export default function Signup() {
                 <Checkbox id="terms" className="mt-0.5" />
                 <Label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
                   I agree to the{' '}
-                  <Link to="/terms" className="text-primary hover:underline">
+                  <Link href="/terms" className="text-primary hover:underline">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link to="/privacy" className="text-primary hover:underline">
+                  <Link href="/privacy" className="text-primary hover:underline">
                     Privacy Policy
                   </Link>
                 </Label>
@@ -166,7 +168,7 @@ export default function Signup() {
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
               <Link
-                to={`/login?return=${encodeURIComponent(returnTo)}`}
+                href={`/login?return=${encodeURIComponent(returnTo)}`}
                 className="text-primary font-medium hover:underline"
               >
                 Sign in

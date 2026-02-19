@@ -1,5 +1,8 @@
+"use client";
+
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, ShoppingBag, User, Menu, X, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +30,7 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { itemCount, toggleCart } = useCart();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const { data: meData } = useQuery({
     queryKey: ['customer-me'],
@@ -56,7 +59,7 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
       setIsSearchOpen(false);
     }
@@ -84,7 +87,7 @@ export function Header() {
                 {navLinks.map((link) => (
                   <Link
                     key={link.name}
-                    to={link.href}
+                    href={link.href}
                     className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                   >
                     {link.name}
@@ -98,7 +101,7 @@ export function Header() {
                         <p className="font-medium text-foreground">{displayName}</p>
                       </div>
                       <Link
-                        to="/orders"
+                        href="/orders"
                         className="mt-3 text-lg font-medium text-foreground hover:text-primary transition-colors"
                       >
                         My Orders
@@ -114,13 +117,13 @@ export function Header() {
                   ) : (
                     <>
                       <Link
-                        to="/login"
+                        href="/login"
                         className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                       >
                         Sign In
                       </Link>
                       <Link
-                        to="/signup"
+                        href="/signup"
                         className="mt-2 block text-lg font-medium text-foreground hover:text-primary transition-colors"
                       >
                         Sign Up
@@ -133,7 +136,7 @@ export function Header() {
           </Sheet>
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <span className="font-display text-2xl md:text-3xl font-bold text-foreground tracking-tight">
               Elika
             </span>
@@ -144,7 +147,7 @@ export function Header() {
             {navLinks.map((link) => (
               <Link
                 key={link.name}
-                to={link.href}
+                href={link.href}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
               >
                 {link.name}
@@ -205,14 +208,14 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem asChild>
-                    <Link to="/orders">My Orders</Link>
+                    <Link href="/orders">My Orders</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>Sign Out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/login">
+              <Link href="/login">
                 <Button variant="ghost" size="icon">
                   <User className="h-5 w-5" />
                   <span className="sr-only">Account</span>
@@ -220,7 +223,7 @@ export function Header() {
               </Link>
             )}
             {!isLoggedIn ? (
-              <Link to="/signup" className="hidden md:inline-flex">
+              <Link href="/signup" className="hidden md:inline-flex">
                 <Button variant="outline" size="sm">
                   Sign Up
                 </Button>

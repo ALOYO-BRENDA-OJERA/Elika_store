@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import { Plus, Search, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -28,7 +30,6 @@ import { Label } from '@/components/ui/label';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { categories as mockCategories } from '@/data/products';
 
 interface Category {
   id: string;
@@ -39,10 +40,25 @@ interface Category {
   updated_at: string;
 }
 
+interface Subsection {
+  id: number;
+  category_id: number;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
+const slugify = (value: string) => value.trim().toLowerCase().replace(/\s+/g, '-');
+
 export default function AdminCategories() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [subsectionsOpen, setSubsectionsOpen] = useState(false);
+  const [subsectionCategory, setSubsectionCategory] = useState<Category | null>(null);
+  const [newSubsectionName, setNewSubsectionName] = useState('');
+  const [editingSubsectionId, setEditingSubsectionId] = useState<number | null>(null);
+  const [editingSubsectionName, setEditingSubsectionName] = useState('');
   const queryClient = useQueryClient();
 
   // Fetch categories from database
@@ -55,6 +71,19 @@ export default function AdminCategories() {
     },
   });
 
+  const subsectionsQuery = useQuery({
+    queryKey: ['admin-category-subsections', subsectionCategory?.id],
+    enabled: subsectionsOpen && !!subsectionCategory?.id,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/categories/${subsectionCategory?.id}/subsections`,
+        { credentials: 'include' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch subsections');
+      return response.json() as Promise<Subsection[]>;
+    },
+  });
+
   // Add category mutation
   const addCategoryMutation = useMutation({
     mutationFn: async (newCategory: { name: string; slug: string; image?: string }) => {
@@ -62,6 +91,7 @@ export default function AdminCategories() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCategory),
+        credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to add category');
       return response.json();
@@ -114,6 +144,72 @@ export default function AdminCategories() {
     },
   });
 
+  const addSubsectionMutation = useMutation({
+    mutationFn: async ({ categoryId, name }: { categoryId: string; name: string }) => {
+      const response = await fetch(`/api/categories/${categoryId}/subsections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, slug: slugify(name) }),
+      });
+      if (!response.ok) throw new Error('Failed to add subsection');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['admin-category-subsections', subsectionCategory?.id],
+      });
+      setNewSubsectionName('');
+      toast.success('Subsection added');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to add subsection: ' + error.message);
+    },
+  });
+
+  const updateSubsectionMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      const response = await fetch(`/api/subsections/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, slug: slugify(name) }),
+      });
+      if (!response.ok) throw new Error('Failed to update subsection');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['admin-category-subsections', subsectionCategory?.id],
+      });
+      setEditingSubsectionId(null);
+      setEditingSubsectionName('');
+      toast.success('Subsection updated');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update subsection: ' + error.message);
+    },
+  });
+
+  const deleteSubsectionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/subsections/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to delete subsection');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['admin-category-subsections', subsectionCategory?.id],
+      });
+      toast.success('Subsection deleted');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to delete subsection: ' + error.message);
+    },
+  });
+
   const filteredCategories = categories.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -122,7 +218,7 @@ export default function AdminCategories() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const slug = name.toLowerCase().replace(/\s+/g, '-');
+    const slug = slugify(name);
     
     addCategoryMutation.mutate({ name, slug });
   };
@@ -133,7 +229,7 @@ export default function AdminCategories() {
     
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const slug = name.toLowerCase().replace(/\s+/g, '-');
+    const slug = slugify(name);
     
     updateCategoryMutation.mutate({ id: editingCategory.id, name, slug });
   };
@@ -142,6 +238,47 @@ export default function AdminCategories() {
     if (confirm('Are you sure you want to delete this category?')) {
       deleteCategoryMutation.mutate(id);
     }
+  };
+
+  const openSubsections = (category: Category) => {
+    setSubsectionCategory(category);
+    setSubsectionsOpen(true);
+    setNewSubsectionName('');
+    setEditingSubsectionId(null);
+    setEditingSubsectionName('');
+  };
+
+  const closeSubsections = () => {
+    setSubsectionsOpen(false);
+    setSubsectionCategory(null);
+    setNewSubsectionName('');
+    setEditingSubsectionId(null);
+    setEditingSubsectionName('');
+  };
+
+  const handleAddSubsection = () => {
+    if (!subsectionCategory) return;
+    const name = newSubsectionName.trim();
+    if (!name) {
+      toast.error('Subsection name is required');
+      return;
+    }
+    addSubsectionMutation.mutate({ categoryId: subsectionCategory.id, name });
+  };
+
+  const startEditSubsection = (subsection: Subsection) => {
+    setEditingSubsectionId(subsection.id);
+    setEditingSubsectionName(subsection.name);
+  };
+
+  const handleUpdateSubsection = () => {
+    const name = editingSubsectionName.trim();
+    if (!editingSubsectionId) return;
+    if (!name) {
+      toast.error('Subsection name is required');
+      return;
+    }
+    updateSubsectionMutation.mutate({ id: editingSubsectionId, name });
   };
 
   return (
@@ -231,6 +368,108 @@ export default function AdminCategories() {
           </DialogContent>
         </Dialog>
 
+        {/* Subsections Dialog */}
+        <Dialog open={subsectionsOpen} onOpenChange={(open) => !open && closeSubsections()}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="font-display">
+                Manage Subsections
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div className="text-sm text-muted-foreground">
+                {subsectionCategory ? subsectionCategory.name : 'Category'}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newSubsectionName}
+                  onChange={(e) => setNewSubsectionName(e.target.value)}
+                  placeholder="New subsection name"
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddSubsection}
+                  disabled={addSubsectionMutation.isPending}
+                >
+                  {addSubsectionMutation.isPending ? 'Adding...' : 'Add'}
+                </Button>
+              </div>
+
+              {subsectionsQuery.isLoading ? (
+                <div className="text-sm text-muted-foreground">Loading subsections...</div>
+              ) : (subsectionsQuery.data || []).length === 0 ? (
+                <div className="text-sm text-muted-foreground">No subsections yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {(subsectionsQuery.data || []).map((subsection) => {
+                    const isEditing = editingSubsectionId === subsection.id;
+                    return (
+                      <div key={subsection.id} className="flex flex-wrap items-center gap-2">
+                        {isEditing ? (
+                          <Input
+                            value={editingSubsectionName}
+                            onChange={(e) => setEditingSubsectionName(e.target.value)}
+                            className="flex-1 min-w-[200px]"
+                          />
+                        ) : (
+                          <div className="flex-1 min-w-[200px] text-sm">
+                            {subsection.name}
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          {isEditing ? (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleUpdateSubsection}
+                                disabled={updateSubsectionMutation.isPending}
+                              >
+                                {updateSubsectionMutation.isPending ? 'Saving...' : 'Save'}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingSubsectionId(null);
+                                  setEditingSubsectionName('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => startEditSubsection(subsection)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteSubsectionMutation.mutate(subsection.id)}
+                                disabled={deleteSubsectionMutation.isPending}
+                              >
+                                Delete
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Categories Table */}
         <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
           <Table>
@@ -288,6 +527,10 @@ export default function AdminCategories() {
                           <DropdownMenuItem onClick={() => setEditingCategory(category)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openSubsections(category)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Subsections
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"

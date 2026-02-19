@@ -1,5 +1,8 @@
+"use client";
+
 import { useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ChevronRight,
   Heart,
@@ -30,9 +33,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = typeof params?.id === 'string' ? params.id : '';
   const { addItem } = useCart();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [reviewName, setReviewName] = useState('');
@@ -123,7 +127,7 @@ export default function ProductDetail() {
             The product you're looking for doesn't exist or has been removed.
           </p>
           <Button asChild>
-            <Link to="/products">Browse Products</Link>
+            <Link href="/products">Browse Products</Link>
           </Button>
         </div>
       </Layout>
@@ -147,20 +151,26 @@ export default function ProductDetail() {
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-          <Link to="/" className="hover:text-foreground transition-colors">
+          <Link href="/" className="hover:text-foreground transition-colors">
             Home
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <Link to="/products" className="hover:text-foreground transition-colors">
+          <Link href="/products" className="hover:text-foreground transition-colors">
             Products
           </Link>
           <ChevronRight className="h-4 w-4" />
           <Link
-            to={`/products?category=${product.category.toLowerCase().replace(/\s+/g, '-')}`}
+            href={`/products?category=${product.category.toLowerCase().replace(/\s+/g, '-')}`}
             className="hover:text-foreground transition-colors"
           >
             {product.category}
           </Link>
+          {product.subcategory ? (
+            <>
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-foreground">{product.subcategory}</span>
+            </>
+          ) : null}
           <ChevronRight className="h-4 w-4" />
           <span className="text-foreground">{product.name}</span>
         </nav>
@@ -231,7 +241,10 @@ export default function ProductDetail() {
 
             {/* Title & Category */}
             <div>
-              <p className="text-sm text-muted-foreground mb-1">{product.category}</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                {product.category}
+                {product.subcategory ? ` · ${product.subcategory}` : ''}
+              </p>
               <h1 className="font-display text-3xl md:text-4xl font-bold">
                 {product.name}
               </h1>
@@ -269,12 +282,22 @@ export default function ProductDetail() {
               )}
             </div>
 
-            <Separator />
+            <div className="rounded-xl border bg-card p-4">
+              <h3 className="font-display text-lg font-semibold">Features</h3>
+              {product.features && product.features.length > 0 ? (
+                <ul className="mt-3 list-disc list-inside text-sm text-muted-foreground space-y-2">
+                  {product.features.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No features provided for this product yet.
+                </p>
+              )}
+            </div>
 
-            {/* Description */}
-            <p className="text-muted-foreground leading-relaxed">
-              {product.description}
-            </p>
+            <Separator />
 
             {/* Quantity Selector */}
             <div className="flex items-center gap-4">
@@ -311,7 +334,7 @@ export default function ProductDetail() {
                 disabled={!product.inStock}
                 onClick={() => {
                   addItem(product, quantity);
-                  navigate('/cart');
+                  router.push('/cart');
                 }}
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -380,18 +403,6 @@ export default function ProductDetail() {
                 <p className="text-muted-foreground leading-relaxed">
                   {product.description}
                 </p>
-                <h3 className="font-display text-xl font-semibold mt-6 mb-4">
-                  Product Features
-                </h3>
-                {product.features && product.features.length > 0 ? (
-                  <ul className="list-disc list-inside text-muted-foreground space-y-2">
-                    {product.features.map((feature) => (
-                      <li key={feature}>{feature}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted-foreground">No features provided for this product yet.</p>
-                )}
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="pt-6">

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   TrendingUp,
   DollarSign,
@@ -5,7 +7,7 @@ import {
   FolderOpen,
   ArrowUpRight,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +16,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboard() {
-  const adminBase = (import.meta.env.VITE_ADMIN_PATH as string | undefined) || 'admin';
+  console.log('AdminDashboard: Dashboard component rendered');
+  const adminBase = process.env.NEXT_PUBLIC_ADMIN_PATH || 'admin';
 
   // Fetch dashboard stats
   const { data: statsData, isLoading } = useQuery({
@@ -89,7 +92,7 @@ export default function AdminDashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="font-display text-lg">Top Products</CardTitle>
               <Button variant="ghost" size="sm" className="gap-1" asChild>
-                <Link to={`/${adminBase}/products`}>
+                <Link href={`/${adminBase}/products`}>
                   View All <ArrowUpRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -140,13 +143,13 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button className="w-full justify-start gap-2" variant="outline" asChild>
-                  <Link to={`/${adminBase}/products`}>
+                  <Link href={`/${adminBase}/products`}>
                     <Package className="h-4 w-4" />
                     Manage Products
                   </Link>
                 </Button>
                 <Button className="w-full justify-start gap-2" variant="outline" asChild>
-                  <Link to={`/${adminBase}/categories`}>
+                  <Link href={`/${adminBase}/categories`}>
                     <FolderOpen className="h-4 w-4" />
                     Manage Categories
                   </Link>
@@ -158,7 +161,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-display text-lg">Get In Touch</CardTitle>
                 <Button variant="ghost" size="sm" className="gap-1" asChild>
-                  <Link to={`/${adminBase}/messages`}>View All</Link>
+                  <Link href={`/${adminBase}/messages`}>View All</Link>
                 </Button>
               </CardHeader>
               <CardContent>

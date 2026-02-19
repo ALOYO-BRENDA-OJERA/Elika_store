@@ -13,6 +13,8 @@ export type ApiProductRow = {
   image_labels?: unknown;
   category_name?: string | null;
   category_slug?: string | null;
+  subsection_name?: string | null;
+  subsection_slug?: string | null;
   review_count?: number | string | null;
   rating_avg?: number | string | null;
   created_at?: string;
@@ -92,6 +94,7 @@ export const apiRowToProduct = (row: ApiProductRow): Product => {
     imageLabels: normalizedLabels,
     category: row.category_name || 'Uncategorized',
     categorySlug: row.category_slug || undefined,
+    subcategory: row.subsection_name || undefined,
     features,
     tags: [],
     rating: toNumber(row.rating_avg, 0),

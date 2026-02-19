@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -64,7 +64,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand section */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="inline-block mb-4">
+            <Link href="/" className="inline-block mb-4">
               <span className="font-display text-3xl font-bold">Elika</span>
             </Link>
             <p className="text-background/70 text-sm mb-4">
@@ -102,7 +102,7 @@ export function Footer() {
               {footerLinks.shop.map((link) => (
                 <li key={link.name}>
                   <Link
-                    to={link.href}
+                    href={link.href}
                     className="text-background/70 hover:text-primary transition-colors text-sm"
                   >
                     {link.name}
@@ -119,7 +119,7 @@ export function Footer() {
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
                   <Link
-                    to={link.href}
+                    href={link.href}
                     className="text-background/70 hover:text-primary transition-colors text-sm"
                   >
                     {link.name}
@@ -136,7 +136,7 @@ export function Footer() {
               {footerLinks.support.map((link) => (
                 <li key={link.name}>
                   <Link
-                    to={link.href}
+                    href={link.href}
                     className="text-background/70 hover:text-primary transition-colors text-sm"
                   >
                     {link.name}
@@ -178,7 +178,7 @@ export function Footer() {
               {footerLinks.legal.map((link) => (
                 <Link
                   key={link.name}
-                  to={link.href}
+                  href={link.href}
                   className="text-background/60 hover:text-background text-sm transition-colors"
                 >
                   {link.name}

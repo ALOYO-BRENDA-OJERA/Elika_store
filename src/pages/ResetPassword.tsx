@@ -1,5 +1,8 @@
+"use client";
+
 import { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -8,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 export default function ResetPassword() {
-  const [params] = useSearchParams();
-  const navigate = useNavigate();
+  const params = useSearchParams();
+  const router = useRouter();
   const token = params.get('token') || '';
 
   const [password, setPassword] = useState('');
@@ -35,7 +38,7 @@ export default function ResetPassword() {
       }
 
       toast.success('Password updated. You can sign in now.');
-      navigate('/login', { replace: true });
+      router.replace('/login');
     } catch (err: any) {
       toast.error(err?.message || 'Failed to reset password');
     } finally {
@@ -70,7 +73,7 @@ export default function ResetPassword() {
               </form>
 
               <p className="text-sm text-muted-foreground mt-4">
-                <Link to="/login" className="text-primary hover:underline">
+                <Link href="/login" className="text-primary hover:underline">
                   Back to sign in
                 </Link>
               </p>

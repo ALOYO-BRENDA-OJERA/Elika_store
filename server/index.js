@@ -276,6 +276,18 @@ const initializeDb = async () => {
     `);
 
     await promisePool.query(`
+      CREATE TABLE IF NOT EXISTS category_subsections (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        category_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_category_subsection (category_id, slug),
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+      )
+    `);
+
+    await promisePool.query(`
       CREATE TABLE IF NOT EXISTS products (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -285,13 +297,29 @@ const initializeDb = async () => {
         stock_count INT DEFAULT 0,
         in_stock BOOLEAN DEFAULT TRUE,
         category_id INT,
+        subsection_id INT,
         images JSON,
         image_labels JSON,
         features JSON,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (category_id) REFERENCES categories(id)
+        FOREIGN KEY (category_id) REFERENCES categories(id),
+        FOREIGN KEY (subsection_id) REFERENCES category_subsections(id) ON DELETE SET NULL
       )
     `);
+
+    try {
+      await promisePool.query('ALTER TABLE products ADD COLUMN subsection_id INT NULL');
+    } catch (err) {
+      if (err.code !== 'ER_DUP_FIELDNAME') throw err;
+    }
+
+    try {
+      await promisePool.query(
+        'ALTER TABLE products ADD CONSTRAINT fk_products_subsection FOREIGN KEY (subsection_id) REFERENCES category_subsections(id) ON DELETE SET NULL'
+      );
+    } catch (err) {
+      if (err.code !== 'ER_DUP_KEYNAME') throw err;
+    }
 
     await promisePool.query(`
       CREATE TABLE IF NOT EXISTS reviews (
@@ -583,10 +611,12 @@ app.get('/api/products', async (req, res) => {
   try {
     const [rows] = await promisePool.query(`
       SELECT p.*, c.name as category_name, c.slug as category_slug,
+             s.name as subsection_name, s.slug as subsection_slug,
              COALESCE(rv.review_count, 0) AS review_count,
              COALESCE(rv.rating_avg, 0) AS rating_avg
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN category_subsections s ON p.subsection_id = s.id
       LEFT JOIN (
         SELECT product_id, COUNT(*) AS review_count, AVG(rating) AS rating_avg
         FROM reviews
@@ -633,10 +663,12 @@ app.get('/api/products/:id', async (req, res) => {
   try {
     const [rows] = await promisePool.query(`
       SELECT p.*, c.name as category_name, c.slug as category_slug,
+             s.name as subsection_name, s.slug as subsection_slug,
              COALESCE(rv.review_count, 0) AS review_count,
              COALESCE(rv.rating_avg, 0) AS rating_avg
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN category_subsections s ON p.subsection_id = s.id
       LEFT JOIN (
         SELECT product_id, COUNT(*) AS review_count, AVG(rating) AS rating_avg
         FROM reviews
@@ -1195,12 +1227,71 @@ app.delete('/api/categories/:id', requireAdmin, async (req, res) => {
   }
 });
 
+app.get('/api/categories/:id/subsections', requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await promisePool.query(
+      `
+      SELECT id, category_id, name, slug, created_at
+      FROM category_subsections
+      WHERE category_id = ?
+      ORDER BY name
+      `,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/categories/:id/subsections', requireAdmin, async (req, res) => {
+  const { name, slug } = req.body || {};
+  if (!name || !slug) {
+    return res.status(400).json({ error: 'Name and slug are required' });
+  }
+  try {
+    const [result] = await promisePool.query(
+      'INSERT INTO category_subsections (category_id, name, slug) VALUES (?, ?, ?)',
+      [req.params.id, name, slug]
+    );
+    res.status(201).json({ id: result.insertId, category_id: req.params.id, name, slug });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/subsections/:id', requireAdmin, async (req, res) => {
+  const { name, slug } = req.body || {};
+  if (!name || !slug) {
+    return res.status(400).json({ error: 'Name and slug are required' });
+  }
+  try {
+    await promisePool.query(
+      'UPDATE category_subsections SET name = ?, slug = ? WHERE id = ?',
+      [name, slug, req.params.id]
+    );
+    res.json({ id: req.params.id, name, slug });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/subsections/:id', requireAdmin, async (req, res) => {
+  try {
+    await promisePool.query('DELETE FROM category_subsections WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Products CRUD
 app.post('/api/products', requireAdmin, upload.any(), async (req, res) => {
   const { name, description } = req.body;
   const price = coerceNumber(req.body.price) ?? 0;
   const stock_count = coerceNumber(req.body.stock_count) ?? 0;
   const category_id = coerceNumber(req.body.category_id);
+  const subsection_id = coerceNumber(req.body.subsection_id);
 
   const featuresArray = parseStringArray(req.body.features);
   const imageLabelsArray = parseJsonStringArrayPreserveEmpty(req.body.image_labels);
@@ -1229,8 +1320,18 @@ app.post('/api/products', requireAdmin, upload.any(), async (req, res) => {
     const featuresJson = JSON.stringify(featuresArray);
     const imageLabelsJson = JSON.stringify(effectiveImageLabels);
     const [result] = await promisePool.query(
-      'INSERT INTO products (name, description, price, stock_count, category_id, images, features, image_labels) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, description, price, stock_count, category_id ?? null, imagesJson, featuresJson, imageLabelsJson]
+      'INSERT INTO products (name, description, price, stock_count, category_id, subsection_id, images, features, image_labels) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        name,
+        description,
+        price,
+        stock_count,
+        category_id ?? null,
+        subsection_id ?? null,
+        imagesJson,
+        featuresJson,
+        imageLabelsJson,
+      ]
     );
     res.status(201).json({
       id: result.insertId,
@@ -1239,6 +1340,7 @@ app.post('/api/products', requireAdmin, upload.any(), async (req, res) => {
       price,
       stock_count,
       category_id: category_id ?? null,
+      subsection_id: subsection_id ?? null,
       images: imagesArray,
       features: featuresArray,
       image_labels: effectiveImageLabels,
@@ -1253,6 +1355,7 @@ app.put('/api/products/:id', requireAdmin, upload.any(), async (req, res) => {
   const price = coerceNumber(req.body.price) ?? 0;
   const stock_count = coerceNumber(req.body.stock_count) ?? 0;
   const category_id = coerceNumber(req.body.category_id);
+  const subsection_id = coerceNumber(req.body.subsection_id);
 
   const featuresArray = req.body.features === undefined ? undefined : parseStringArray(req.body.features);
   const imageLabelsArray =
@@ -1266,8 +1369,9 @@ app.put('/api/products/:id', requireAdmin, upload.any(), async (req, res) => {
   const imagesFiles = allFiles.filter((f) => f.fieldname === 'images');
 
   try {
-    const params = [name, description, price, stock_count, category_id ?? null];
-    let sql = 'UPDATE products SET name = ?, description = ?, price = ?, stock_count = ?, category_id = ?';
+    const params = [name, description, price, stock_count, category_id ?? null, subsection_id ?? null];
+    let sql =
+      'UPDATE products SET name = ?, description = ?, price = ?, stock_count = ?, category_id = ?, subsection_id = ?';
 
     // Two-image UX: replace front/back slots when provided.
     if (frontFile || backFile) {
@@ -1330,9 +1434,10 @@ app.put('/api/products/:id', requireAdmin, upload.any(), async (req, res) => {
     // Return the updated row shape (including images if replaced)
     const [rows] = await promisePool.query(
       `
-      SELECT p.*, c.name as category_name
+      SELECT p.*, c.name as category_name, s.name as subsection_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN category_subsections s ON p.subsection_id = s.id
       WHERE p.id = ?
       `,
       [req.params.id]

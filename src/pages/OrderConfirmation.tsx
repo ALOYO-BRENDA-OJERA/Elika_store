@@ -1,15 +1,14 @@
-import { Link, useLocation } from 'react-router-dom';
+"use client";
+
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { CheckCircle, Package, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 
 export default function OrderConfirmation() {
-  const location = useLocation();
-  const state = (location.state || {}) as {
-    orderNumber?: string | null;
-  };
-
-  const orderNumber = state.orderNumber || null;
+  const params = useSearchParams();
+  const orderNumber = params.get('orderNumber');
 
   return (
     <Layout>
@@ -35,7 +34,7 @@ export default function OrderConfirmation() {
               <p className="font-semibold text-lg">{orderNumber}</p>
               <div className="mt-3">
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/orders">Track this order</Link>
+                  <Link href="/orders">Track this order</Link>
                 </Button>
               </div>
             </div>
@@ -75,16 +74,16 @@ export default function OrderConfirmation() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="btn-primary gap-2">
-              <Link to="/products">
+              <Link href="/products">
                 Continue Shopping
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link to="/orders">My Orders</Link>
+              <Link href="/orders">My Orders</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link to="/">Back to Home</Link>
+              <Link href="/">Back to Home</Link>
             </Button>
           </div>
         </div>

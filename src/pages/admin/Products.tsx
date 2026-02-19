@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Edit, Trash2, MoreHorizontal, Eye } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -47,6 +49,8 @@ interface Product {
   original_price: number | null;
   category_id: number | null;
   category_name?: string | null;
+  subsection_id?: number | null;
+  subsection_name?: string | null;
   images: unknown;
   image_labels?: unknown;
   features?: unknown;
@@ -59,12 +63,20 @@ interface Category {
   name: string;
 }
 
+interface Subsection {
+  id: number;
+  category_id: number;
+  name: string;
+}
+
 export default function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProductCategoryId, setNewProductCategoryId] = useState('');
+  const [newProductSubsectionId, setNewProductSubsectionId] = useState('');
   const [editProductCategoryId, setEditProductCategoryId] = useState('');
+  const [editProductSubsectionId, setEditProductSubsectionId] = useState('');
   const [newProductFrontImage, setNewProductFrontImage] = useState<File | null>(null);
   const [newProductBackImage, setNewProductBackImage] = useState<File | null>(null);
   const [editProductFrontImage, setEditProductFrontImage] = useState<File | null>(null);
@@ -82,6 +94,7 @@ export default function AdminProducts() {
   useEffect(() => {
     if (isAddDialogOpen) {
       setNewProductCategoryId('');
+      setNewProductSubsectionId('');
       setNewProductFeaturesText('');
       setNewProductFrontImage(null);
       setNewProductBackImage(null);
@@ -93,6 +106,11 @@ export default function AdminProducts() {
     setEditProductCategoryId(
       editingProduct.category_id !== null && editingProduct.category_id !== undefined
         ? String(editingProduct.category_id)
+        : ''
+    );
+    setEditProductSubsectionId(
+      editingProduct.subsection_id !== null && editingProduct.subsection_id !== undefined
+        ? String(editingProduct.subsection_id)
         : ''
     );
     setEditProductFrontImage(null);
@@ -146,6 +164,30 @@ export default function AdminProducts() {
       const response = await fetch('/api/categories');
       if (!response.ok) throw new Error('Failed to fetch categories');
       return response.json() as Promise<Category[]>;
+    },
+  });
+
+  const { data: newSubsections = [] } = useQuery({
+    queryKey: ['admin-category-subsections', newProductCategoryId],
+    enabled: Boolean(newProductCategoryId),
+    queryFn: async () => {
+      const response = await fetch(`/api/categories/${newProductCategoryId}/subsections`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch subsections');
+      return response.json() as Promise<Subsection[]>;
+    },
+  });
+
+  const { data: editSubsections = [] } = useQuery({
+    queryKey: ['admin-category-subsections-edit', editProductCategoryId],
+    enabled: Boolean(editProductCategoryId),
+    queryFn: async () => {
+      const response = await fetch(`/api/categories/${editProductCategoryId}/subsections`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch subsections');
+      return response.json() as Promise<Subsection[]>;
     },
   });
 
@@ -240,6 +282,10 @@ export default function AdminProducts() {
     formData.set('price', String(parseInt((source.get('price') as string) || '0') || 0));
     formData.set('stock_count', String(parseInt((source.get('stock') as string) || '0') || 0));
     formData.set('category_id', newProductCategoryId ? String(Number(newProductCategoryId)) : '');
+    formData.set(
+      'subsection_id',
+      newProductSubsectionId ? String(Number(newProductSubsectionId)) : ''
+    );
     if (newProductFrontImage) formData.append('front_image', newProductFrontImage);
     if (newProductBackImage) formData.append('back_image', newProductBackImage);
     formData.set('features', JSON.stringify(parseFeatures(newProductFeaturesText)));
@@ -259,6 +305,10 @@ export default function AdminProducts() {
     formData.set('price', String(parseInt((source.get('price') as string) || '0') || 0));
     formData.set('stock_count', String(parseInt((source.get('stock') as string) || '0') || 0));
     formData.set('category_id', editProductCategoryId ? String(Number(editProductCategoryId)) : '');
+    formData.set(
+      'subsection_id',
+      editProductSubsectionId ? String(Number(editProductSubsectionId)) : ''
+    );
     if (editProductFrontImage) formData.append('front_image', editProductFrontImage);
     if (editProductBackImage) formData.append('back_image', editProductBackImage);
     formData.set('features', JSON.stringify(parseFeatures(editProductFeaturesText)));
@@ -319,7 +369,13 @@ export default function AdminProducts() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
-                  <Select value={newProductCategoryId} onValueChange={setNewProductCategoryId}>
+                  <Select
+                    value={newProductCategoryId}
+                    onValueChange={(value) => {
+                      setNewProductCategoryId(value);
+                      setNewProductSubsectionId('');
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -327,6 +383,33 @@ export default function AdminProducts() {
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={String(cat.id)}>
                           {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subcategory">Subcategory</Label>
+                  <Select
+                    value={newProductSubsectionId}
+                    onValueChange={setNewProductSubsectionId}
+                    disabled={!newProductCategoryId || newSubsections.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          !newProductCategoryId
+                            ? 'Select category first'
+                            : newSubsections.length === 0
+                              ? 'No subcategories'
+                              : 'Select subcategory'
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {newSubsections.map((sub) => (
+                        <SelectItem key={sub.id} value={String(sub.id)}>
+                          {sub.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -440,7 +523,13 @@ export default function AdminProducts() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-category">Category</Label>
-                <Select value={editProductCategoryId} onValueChange={setEditProductCategoryId}>
+                <Select
+                  value={editProductCategoryId}
+                  onValueChange={(value) => {
+                    setEditProductCategoryId(value);
+                    setEditProductSubsectionId('');
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -448,6 +537,33 @@ export default function AdminProducts() {
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={String(cat.id)}>
                         {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-subcategory">Subcategory</Label>
+                <Select
+                  value={editProductSubsectionId}
+                  onValueChange={setEditProductSubsectionId}
+                  disabled={!editProductCategoryId || editSubsections.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        !editProductCategoryId
+                          ? 'Select category first'
+                          : editSubsections.length === 0
+                            ? 'No subcategories'
+                            : 'Select subcategory'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {editSubsections.map((sub) => (
+                      <SelectItem key={sub.id} value={String(sub.id)}>
+                        {sub.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -574,7 +690,9 @@ export default function AdminProducts() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {product.category_name || 'Uncategorized'}
+                        {product.subsection_name
+                          ? `${product.category_name || 'Uncategorized'} / ${product.subsection_name}`
+                          : product.category_name || 'Uncategorized'}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">

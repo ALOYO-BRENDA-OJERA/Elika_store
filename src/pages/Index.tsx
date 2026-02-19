@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+"use client";
+
+import Link from 'next/link';
 import { ArrowRight, Truck, Shield, RefreshCw, Headphones, Star, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
@@ -104,13 +106,13 @@ const Index = () => {
             </p>
             <div className="flex flex-wrap gap-4">
               <Button asChild size="lg" className="btn-primary text-base gap-2">
-                <Link to="/products">
+                <Link href="/products">
                   Shop Now
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="bg-background/10 border-background/30 text-background hover:bg-background/20 text-base">
-                <Link to="/categories">Browse Categories</Link>
+                <Link href="/categories">Browse Categories</Link>
               </Button>
             </div>
           </div>
@@ -145,7 +147,7 @@ const Index = () => {
               <p className="text-muted-foreground">Find exactly what you're looking for</p>
             </div>
             <Button asChild variant="ghost" className="hidden md:flex gap-1">
-              <Link to="/categories">
+              <Link href="/categories">
                 View All <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -181,7 +183,7 @@ const Index = () => {
               <p className="text-muted-foreground">Handpicked favorites just for you</p>
             </div>
             <Button asChild variant="ghost" className="hidden md:flex gap-1">
-              <Link to="/products?featured=true">
+              <Link href="/products?featured=true">
                 View All <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -209,7 +211,7 @@ const Index = () => {
                 Sign up today and receive an exclusive discount code for your first purchase. Don't miss out!
               </p>
               <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
-                <Link to="/signup">Create Account</Link>
+                <Link href="/signup">Create Account</Link>
               </Button>
             </div>
             <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block">
@@ -228,7 +230,7 @@ const Index = () => {
               <p className="text-muted-foreground">Fresh products just landed in store</p>
             </div>
             <Button asChild variant="ghost" className="hidden md:flex gap-1">
-              <Link to="/products?sort=newest">
+              <Link href="/products?sort=newest">
                 View All <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>

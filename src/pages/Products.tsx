@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'next/navigation';
 import { Grid, List, ChevronDown } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { ProductGrid } from '@/components/products/ProductGrid';
@@ -27,7 +29,7 @@ const sortOptions = [
 ];
 
 export default function Products() {
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const categoryParam = searchParams.get('category') || '';
 

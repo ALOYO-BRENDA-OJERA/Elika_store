@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+"use client";
+
+import Link from 'next/link';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -35,7 +37,7 @@ export default function Cart() {
               shopping and discover amazing products!
             </p>
             <Button asChild size="lg" className="btn-primary gap-2">
-              <Link to="/products">
+                <Link href="/products">
                 Start Shopping
                 <ArrowRight className="h-5 w-5" />
               </Link>
@@ -158,7 +160,7 @@ export default function Cart() {
             {/* Cart Actions */}
             <div className="flex flex-wrap gap-4 pt-4">
               <Button asChild variant="outline">
-                <Link to="/products">Continue Shopping</Link>
+                 <Link href="/products">Continue Shopping</Link>
               </Button>
               <Button
                 variant="ghost"
@@ -217,7 +219,7 @@ export default function Cart() {
               </div>
 
               <Button asChild size="lg" className="w-full btn-primary gap-2">
-                <Link to="/checkout">
+                  <Link href="/checkout">
                   Proceed to Checkout
                   <ArrowRight className="h-5 w-5" />
                 </Link>

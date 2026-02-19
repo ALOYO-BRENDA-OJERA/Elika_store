@@ -1,4 +1,8 @@
-import { Link } from 'react-router-dom';
+"use client";
+
+"use client";
+
+import Link from 'next/link';
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -39,7 +43,7 @@ export function CartDrawer() {
               Your cart is empty
             </p>
             <Button onClick={() => setCartOpen(false)} asChild>
-              <Link to="/products">Continue Shopping</Link>
+              <Link href="/products">Continue Shopping</Link>
             </Button>
           </div>
         ) : (
@@ -60,7 +64,7 @@ export function CartDrawer() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link
-                        to={`/products/${item.product.id}`}
+                        href={`/products/${item.product.id}`}
                         className="font-medium text-sm hover:text-primary transition-colors line-clamp-2"
                         onClick={() => setCartOpen(false)}
                       >
@@ -145,7 +149,7 @@ export function CartDrawer() {
 
               <div className="grid gap-2">
                 <Button asChild className="w-full btn-primary">
-                  <Link to="/checkout" onClick={() => setCartOpen(false)}>
+                  <Link href="/checkout" onClick={() => setCartOpen(false)}>
                     Checkout
                   </Link>
                 </Button>
@@ -155,7 +159,7 @@ export function CartDrawer() {
                   className="w-full"
                   onClick={() => setCartOpen(false)}
                 >
-                  <Link to="/cart">View Cart</Link>
+                  <Link href="/cart">View Cart</Link>
                 </Button>
               </div>
             </div>
